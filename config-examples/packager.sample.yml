@@ -1,0 +1,131 @@
+maven:
+  executable: "D:/apps/maven/apache-maven-3.9.9/bin/mvn.cmd"
+
+vars:
+  base_path: "D:/document/sino/chainworkCode"
+
+  branch_tssb_develop: "tssb_develop"
+  branch_Develop: "Develop"
+
+  output_tssb_develop: "D:/Downloads/war/tssb_develop"
+  output_Develop: "D:/Downloads/war/Develop"
+
+jobs:
+
+  all-tssb_develop:
+    repos:
+      - { name: chainwork-common-databean, path: "${base_path}/chainwork-common-databean", branch: "${branch_tssb_develop}", maven: { workDir: ".", goals: ["clean", "install"] } }
+
+      - { name: chainwork-wms-common-apps, path: "${base_path}/chainwork-wms-common-apps", branch: "${branch_tssb_develop}", maven: { workDir: ".", goals: ["clean", "install"] } }
+      - { name: chainwork-wms-apps,        path: "${base_path}/chainwork-wms-apps",        branch: "${branch_tssb_develop}", maven: { workDir: ".", goals: ["clean", "package"] } }
+
+      - { name: chainwork-tms-common-apps, path: "${base_path}/chainwork-tms-common-apps", branch: "${branch_tssb_develop}", maven: { workDir: ".", goals: ["clean", "install"] } }
+      - { name: chainwork-tms-apps,        path: "${base_path}/chainwork-tms-apps",        branch: "${branch_tssb_develop}", maven: { workDir: ".", goals: ["clean", "package"] } }
+
+      - { name: chainwork-lmdm-common-apps,path: "${base_path}/chainwork-lmdm-common-apps",branch: "${branch_tssb_develop}", maven: { workDir: ".", goals: ["clean", "install"] } }
+      - { name: chainwork-lmdm-apps,       path: "${base_path}/chainwork-lmdm-apps",       branch: "${branch_tssb_develop}", maven: { workDir: ".", goals: ["clean", "package"] } }
+
+    artifacts:
+      outputDir: "${output_tssb_develop}"
+      files:
+        - { repo: chainwork-wms-apps,  from: "wms-java/target/wms-java.war",  to: "wms-java.war" }
+        - { repo: chainwork-wms-apps,  from: "wms-web/target/wms-web.war",    to: "wms-web.war" }
+
+        - { repo: chainwork-tms-apps,  from: "tms-java/target/tms-java.war",  to: "tms-java.war" }
+        - { repo: chainwork-tms-apps,  from: "tms-web/target/tms-web.war",    to: "tms-web.war" }
+
+        - { repo: chainwork-lmdm-apps, from: "lmdm-java/target/lmdm-java.war",to: "lmdm-java.war" }
+        - { repo: chainwork-lmdm-apps, from: "lmdm-web/target/lmdm-web.war",  to: "lmdm-web.war" }
+
+  all-Develop:
+    repos:
+      - { name: chainwork-common-databean, path: "${base_path}/chainwork-common-databean", branch: "${branch_Develop}", maven: { workDir: ".", goals: ["clean", "install"] } }
+
+      - { name: chainwork-wms-common-apps, path: "${base_path}/chainwork-wms-common-apps", branch: "${branch_Develop}", maven: { workDir: ".", goals: ["clean", "install"] } }
+      - { name: chainwork-wms-apps,        path: "${base_path}/chainwork-wms-apps",        branch: "${branch_Develop}", maven: { workDir: ".", goals: ["clean", "package"] } }
+
+      - { name: chainwork-tms-common-apps, path: "${base_path}/chainwork-tms-common-apps", branch: "${branch_Develop}", maven: { workDir: ".", goals: ["clean", "install"] } }
+      - { name: chainwork-tms-apps,        path: "${base_path}/chainwork-tms-apps",        branch: "${branch_Develop}", maven: { workDir: ".", goals: ["clean", "package"] } }
+
+      - { name: chainwork-lmdm-common-apps,path: "${base_path}/chainwork-lmdm-common-apps",branch: "${branch_Develop}", maven: { workDir: ".", goals: ["clean", "install"] } }
+      - { name: chainwork-lmdm-apps,       path: "${base_path}/chainwork-lmdm-apps",       branch: "${branch_Develop}", maven: { workDir: ".", goals: ["clean", "package"] } }
+
+    artifacts:
+      outputDir: "${output_Develop}"
+      files:
+        - { repo: chainwork-wms-apps,  from: "wms-java/target/wms-java.war",  to: "wms-java.war" }
+        - { repo: chainwork-wms-apps,  from: "wms-web/target/wms-web.war",    to: "wms-web.war" }
+
+        - { repo: chainwork-tms-apps,  from: "tms-java/target/tms-java.war",  to: "tms-java.war" }
+        - { repo: chainwork-tms-apps,  from: "tms-web/target/tms-web.war",    to: "tms-web.war" }
+
+        - { repo: chainwork-lmdm-apps, from: "lmdm-java/target/lmdm-java.war",to: "lmdm-java.war" }
+        - { repo: chainwork-lmdm-apps, from: "lmdm-web/target/lmdm-web.war",  to: "lmdm-web.war" }
+
+  # 单独 job：Develop
+  wms-Develop:
+    repos:
+      - { name: chainwork-common-databean, path: "${base_path}/chainwork-common-databean", branch: "${branch_Develop}", maven: { workDir: ".", goals: ["clean", "install"] } }
+      - { name: chainwork-wms-common-apps, path: "${base_path}/chainwork-wms-common-apps", branch: "${branch_Develop}", maven: { workDir: ".", goals: ["clean", "install"] } }
+      - { name: chainwork-wms-apps,        path: "${base_path}/chainwork-wms-apps",        branch: "${branch_Develop}", maven: { workDir: ".", goals: ["clean", "package"] } }
+    artifacts:
+      outputDir: "${output_Develop}"
+      files:
+        - { repo: chainwork-wms-apps, from: "wms-java/target/wms-java.war", to: "wms-java.war" }
+        - { repo: chainwork-wms-apps, from: "wms-web/target/wms-web.war",   to: "wms-web.war" }
+
+  tms-Develop:
+    repos:
+      - { name: chainwork-common-databean, path: "${base_path}/chainwork-common-databean", branch: "${branch_Develop}", maven: { workDir: ".", goals: ["clean", "install"] } }
+      - { name: chainwork-tms-common-apps, path: "${base_path}/chainwork-tms-common-apps", branch: "${branch_Develop}", maven: { workDir: ".", goals: ["clean", "install"] } }
+      - { name: chainwork-tms-apps,        path: "${base_path}/chainwork-tms-apps",        branch: "${branch_Develop}", maven: { workDir: ".", goals: ["clean", "package"] } }
+    artifacts:
+      outputDir: "${output_Develop}"
+      files:
+        - { repo: chainwork-tms-apps, from: "tms-java/target/tms-java.war", to: "tms-java.war" }
+        - { repo: chainwork-tms-apps, from: "tms-web/target/tms-web.war",   to: "tms-web.war" }
+
+  lmdm-Develop:
+    repos:
+      - { name: chainwork-common-databean, path: "${base_path}/chainwork-common-databean", branch: "${branch_Develop}", maven: { workDir: ".", goals: ["clean", "install"] } }
+      - { name: chainwork-lmdm-common-apps,path: "${base_path}/chainwork-lmdm-common-apps",branch: "${branch_Develop}", maven: { workDir: ".", goals: ["clean", "install"] } }
+      - { name: chainwork-lmdm-apps,       path: "${base_path}/chainwork-lmdm-apps",       branch: "${branch_Develop}", maven: { workDir: ".", goals: ["clean", "package"] } }
+    artifacts:
+      outputDir: "${output_Develop}"
+      files:
+        - { repo: chainwork-lmdm-apps, from: "lmdm-java/target/lmdm-java.war", to: "lmdm-java.war" }
+        - { repo: chainwork-lmdm-apps, from: "lmdm-web/target/lmdm-web.war",   to: "lmdm-web.war" }
+
+  # 单独 job：tssb_develop
+  wms-tssb_develop:
+    repos:
+      - { name: chainwork-common-databean, path: "${base_path}/chainwork-common-databean", branch: "${branch_tssb_develop}", maven: { workDir: ".", goals: ["clean", "install"] } }
+      - { name: chainwork-wms-common-apps, path: "${base_path}/chainwork-wms-common-apps", branch: "${branch_tssb_develop}", maven: { workDir: ".", goals: ["clean", "install"] } }
+      - { name: chainwork-wms-apps,        path: "${base_path}/chainwork-wms-apps",        branch: "${branch_tssb_develop}", maven: { workDir: ".", goals: ["clean", "package"] } }
+    artifacts:
+      outputDir: "${output_tssb_develop}"
+      files:
+        - { repo: chainwork-wms-apps, from: "wms-java/target/wms-java.war", to: "wms-java.war" }
+        - { repo: chainwork-wms-apps, from: "wms-web/target/wms-web.war",   to: "wms-web.war" }
+
+  tms-tssb_develop:
+    repos:
+      - { name: chainwork-common-databean, path: "${base_path}/chainwork-common-databean", branch: "${branch_tssb_develop}", maven: { workDir: ".", goals: ["clean", "install"] } }
+      - { name: chainwork-tms-common-apps, path: "${base_path}/chainwork-tms-common-apps", branch: "${branch_tssb_develop}", maven: { workDir: ".", goals: ["clean", "install"] } }
+      - { name: chainwork-tms-apps,        path: "${base_path}/chainwork-tms-apps",        branch: "${branch_tssb_develop}", maven: { workDir: ".", goals: ["clean", "package"] } }
+    artifacts:
+      outputDir: "${output_tssb_develop}"
+      files:
+        - { repo: chainwork-tms-apps, from: "tms-java/target/tms-java.war", to: "tms-java.war" }
+        - { repo: chainwork-tms-apps, from: "tms-web/target/tms-web.war",   to: "tms-web.war" }
+
+  lmdm-tssb_develop:
+    repos:
+      - { name: chainwork-common-databean, path: "${base_path}/chainwork-common-databean", branch: "${branch_tssb_develop}", maven: { workDir: ".", goals: ["clean", "install"] } }
+      - { name: chainwork-lmdm-common-apps,path: "${base_path}/chainwork-lmdm-common-apps",branch: "${branch_tssb_develop}", maven: { workDir: ".", goals: ["clean", "install"] } }
+      - { name: chainwork-lmdm-apps,       path: "${base_path}/chainwork-lmdm-apps",       branch: "${branch_tssb_develop}", maven: { workDir: ".", goals: ["clean", "package"] } }
+    artifacts:
+      outputDir: "${output_tssb_develop}"
+      files:
+        - { repo: chainwork-lmdm-apps, from: "lmdm-java/target/lmdm-java.war", to: "lmdm-java.war" }
+        - { repo: chainwork-lmdm-apps, from: "lmdm-web/target/lmdm-web.war",   to: "lmdm-web.war" }
