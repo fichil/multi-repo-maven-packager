@@ -17,15 +17,18 @@ public class JobRunner {
     private final MavenExecutor mvn;
     private final ArtifactCopier copier;
     private final Map<String, String> vars;
+    private final boolean dryRun; // 新增
 
     public JobRunner(GitExecutor git,
                      MavenExecutor mvn,
                      ArtifactCopier copier,
-                     Map<String, String> vars) {
+                     Map<String, String> vars,
+                     boolean dryRun) {
         this.git = git;
         this.mvn = mvn;
         this.copier = copier;
         this.vars = vars;
+        this.dryRun = dryRun;
     }
 
     public void runJob(PackagerConfig.JobConfig job, boolean skipTests) throws Exception {
@@ -62,11 +65,21 @@ public class JobRunner {
                         throw new IllegalStateException("Repo not exist and gitUrl not set: " + repoPath + " (repo=" + name + ")");
                     }
                     File parent = repoDir.getParentFile();
-                    if (parent != null && !parent.exists()) parent.mkdirs();
+                    if (parent != null && !parent.exists() && !dryRun) parent.mkdirs();
 
                     System.out.println("[PLAN] git clone" + (shallow ? " --depth 1 " : " ") + gitUrl + " -> " + repoDir.getAbsolutePath());
-                    git.cloneRepo(gitUrl, repoDir, shallow);
+
+                    if (!dryRun) {
+                        git.cloneRepo(gitUrl, repoDir, shallow);
+                    } else {
+                        // dry-run: 假定 clone 成功，允许后续 plan 继续输出
+                        repoNameToDir.put(name, repoDir);
+                        // 并且不要继续做真实校验/checkout/mvn
+                        continue;
+                    }
                 }
+
+
 
                 if (!repoDir.isDirectory()) {
                     throw new IllegalArgumentException("Repo path is not a directory: " + repoPath + " (repo=" + name + ")");
