@@ -9,6 +9,7 @@ import io.github.fichil.packager.core.job.JobRunner;
 import io.github.fichil.packager.core.maven.MavenExecutor;
 
 import java.io.File;
+import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
@@ -20,6 +21,7 @@ public class Main {
         String conf = argValue(args, "-conf");
         boolean listJobs = hasFlag(args, "--list-jobs");
 
+        // flags: 如果命令行没传就交互问
         Boolean skipTests = hasFlag(args, "--skipTests") ? Boolean.TRUE : null;
         Boolean dryRun = hasFlag(args, "--dry-run") ? Boolean.TRUE : null;
 
@@ -27,10 +29,10 @@ public class Main {
 
         // conf
         if (isBlank(conf)) {
-            System.out.print("Config file path (-conf): ");
+            System.out.print("Config file path (-conf) [Enter=default]: ");
             conf = sc.nextLine();
-            if (conf.isEmpty()){
-                conf = "config-examples/packager.sample.yml";
+            if (conf != null && conf.trim().isEmpty()) {
+                conf = new File(System.getProperty("user.dir"), "config-examples/packager.sample.yml").getPath();
             }
         }
         conf = trimQuotes(conf);
@@ -48,26 +50,21 @@ public class Main {
             return;
         }
 
-        // job
-        java.util.List<String> jobNames = null;
-
+        // job choose
+        List<String> jobNames = null;
         if (isBlank(jobName)) {
             jobNames = printJobsWithIndex(config);
             System.out.print("Job (number or name) (-job): ");
             jobName = sc.nextLine();
         }
         jobName = trimQuotes(jobName);
-
-        // 如果输入的是数字：映射到 job 名称
         jobName = normalizeJobName(jobName, jobNames);
 
-        jobName = trimQuotes(jobName);
         if (isBlank(jobName)) {
             System.err.println("Job name is required.");
             System.exit(2);
             return;
         }
-
 
         PackagerConfig.JobConfig job = config.getJobs() != null ? config.getJobs().get(jobName) : null;
         if (job == null) {
@@ -79,10 +76,12 @@ public class Main {
 
         // flags（没传就问）
         if (skipTests == null) {
-            skipTests = askYesNo(sc, "Skip tests? (--skipTests) [Y/n]: ", false);
+            // 你的工具场景：默认跳过测试（Y）
+            skipTests = askYesNo(sc, "Skip tests? (--skipTests) [Y/n]: ", true);
         }
         if (dryRun == null) {
-            dryRun = askYesNo(sc, "Dry run? (--dry-run) [y/N]: ", false);
+            // 安全起见：默认 dry-run（Y）
+            dryRun = askYesNo(sc, "Dry run? (--dry-run) [Y/n]: ", true);
         }
 
         String mvnExe = config.getMaven() != null ? config.getMaven().getExecutable() : null;
@@ -100,28 +99,32 @@ public class Main {
         );
 
         runner.runJob(job, skipTests.booleanValue());
-        System.out.println("DONE: " + jobName + (dryRun ? " (DRY-RUN)" : ""));
+        System.out.println("DONE: " + jobName + (dryRun.booleanValue() ? " (DRY-RUN)" : ""));
     }
 
     private static boolean askYesNo(Scanner sc, String prompt, boolean defaultValue) {
         System.out.print(prompt);
         String s = sc.nextLine();
         if (s == null) return defaultValue;
+
         s = s.trim().toLowerCase();
         if (s.isEmpty()) return defaultValue;
-        return "y".equals(s) || "yes".equals(s) || "true".equals(s) || "1".equals(s);
+
+        if ("y".equals(s) || "yes".equals(s) || "true".equals(s) || "1".equals(s)) return true;
+        if ("n".equals(s) || "no".equals(s) || "false".equals(s) || "0".equals(s)) return false;
+
+        // 非法输入：回落默认值（也可以改成循环重新输入）
+        return defaultValue;
     }
 
-
-    private static java.util.List<String> printJobsWithIndex(PackagerConfig config) {
+    private static List<String> printJobsWithIndex(PackagerConfig config) {
         if (config.getJobs() == null || config.getJobs().isEmpty()) {
             System.out.println("No jobs found.");
             return java.util.Collections.emptyList();
         }
 
-        java.util.List<String> names = new java.util.ArrayList<String>(config.getJobs().keySet());
-
-        java.util.Collections.sort(names);
+        List<String> names = new java.util.ArrayList<String>(config.getJobs().keySet());
+        java.util.Collections.sort(names); // 顺序稳定
 
         System.out.println("Available jobs:");
         for (int i = 0; i < names.size(); i++) {
@@ -130,6 +133,18 @@ public class Main {
         return names;
     }
 
+    private static String normalizeJobName(String input, List<String> jobNames) {
+        if (isBlank(input)) return input;
+
+        String s = input.trim();
+        if (jobNames != null && !jobNames.isEmpty() && s.matches("\\d+")) {
+            int idx = Integer.parseInt(s);
+            if (idx >= 1 && idx <= jobNames.size()) {
+                return jobNames.get(idx - 1);
+            }
+        }
+        return s;
+    }
 
     private static String argValue(String[] args, String key) {
         if (args == null) return null;
@@ -162,20 +177,4 @@ public class Main {
         }
         return s;
     }
-
-    private static String normalizeJobName(String input, java.util.List<String> jobNames) {
-        if (isBlank(input)) return input;
-
-        String s = input.trim();
-        // 只有在我们确实打印过列表时才支持数字选择
-        if (jobNames != null && !jobNames.isEmpty() && s.matches("\\d+")) {
-            int idx = Integer.parseInt(s);
-            if (idx >= 1 && idx <= jobNames.size()) {
-                return jobNames.get(idx - 1);
-            }
-            // 数字越界就原样返回，后面会走 job not found 的报错提示
-        }
-        return s;
-    }
-
 }
