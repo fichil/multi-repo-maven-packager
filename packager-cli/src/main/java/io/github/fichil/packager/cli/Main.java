@@ -1,7 +1,8 @@
 package io.github.fichil.packager.cli;
 
 import io.github.fichil.packager.core.artifact.ArtifactCopier;
-import io.github.fichil.packager.core.config.ConfigLoader;
+import io.github.fichil.packager.core.config.CompositeConfigLoader;
+import io.github.fichil.packager.core.config.CompositeConfigLoader.NamedJob;
 import io.github.fichil.packager.core.config.PackagerConfig;
 import io.github.fichil.packager.core.exec.ProcessExecutor;
 import io.github.fichil.packager.core.git.GitExecutor;
@@ -9,127 +10,228 @@ import io.github.fichil.packager.core.job.JobRunner;
 import io.github.fichil.packager.core.maven.MavenExecutor;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
+/**
+ * CLI entry:
+ * - default config: ./package.yml
+ * - load jobs from package.yml includes (apps.yml/openapi.yml...)
+ * - print merged jobs with index
+ * - support multi-select: 1\3\5 (execute in input order)
+ *
+ * Notes:
+ * - no lambda (project constraint)
+ */
 public class Main {
+
+    private static final int EXIT_CONF_REQUIRED = 2;
+    private static final int EXIT_JOB_REQUIRED = 2;
+    private static final int EXIT_JOB_NOT_FOUND = 3;
 
     public static void main(String[] args) throws Exception {
         Scanner sc = new Scanner(System.in);
 
-        String conf = argValue(args, "-conf");
+        String conf = trimQuotes(argValue(args, "-conf"));
         boolean listJobs = hasFlag(args, "--list-jobs");
 
+        // flags: 如果命令行没传就交互问
         Boolean skipTests = hasFlag(args, "--skipTests") ? Boolean.TRUE : null;
         Boolean dryRun = hasFlag(args, "--dry-run") ? Boolean.TRUE : null;
 
-        String jobName = argValue(args, "-job");
+        String jobArg = trimQuotes(argValue(args, "-job")); // now supports: "1\3\5" or "openapi:xxx\apps:yyy"
 
-        // conf
+        // 1) config path
         if (isBlank(conf)) {
-            System.out.print("Config file path (-conf): ");
+            System.out.print("Config file path (-conf) [Enter=package.yml]: ");
             conf = sc.nextLine();
-            if (conf.isEmpty()){
-                conf = "config-examples/packager.sample.yml";
+            if (conf == null || conf.trim().isEmpty()) {
+                conf = new File(System.getProperty("user.dir"), "package.yml").getPath();
             }
         }
         conf = trimQuotes(conf);
-        if (isBlank(conf)) {
-            System.err.println("Config file path is required.");
-            System.exit(2);
+
+        File confFile = new File(conf);
+        if (!confFile.exists() || !confFile.isFile()) {
+            System.err.println("Config file not found: " + confFile.getAbsolutePath());
+            System.err.println("Hint: default config is ./package.yml");
+            System.exit(EXIT_CONF_REQUIRED);
             return;
         }
 
-        PackagerConfig config = new ConfigLoader().load(new File(conf));
+        System.out.println("[INFO] Using config: " + confFile.getAbsolutePath());
 
-        // list jobs
+        // 2) load jobs (from includes)
+        List<NamedJob> allJobs = CompositeConfigLoader.loadFromPackageYml(confFile);
+        if (allJobs == null || allJobs.isEmpty()) {
+            System.out.println("No jobs found.");
+            System.exit(EXIT_JOB_NOT_FOUND);
+            return;
+        }
+
+        // 3) list jobs only
         if (listJobs) {
-            printJobsWithIndex(config);
+            printJobsWithIndex(allJobs);
             return;
         }
 
-        // job
-        java.util.List<String> jobNames = null;
-
-        if (isBlank(jobName)) {
-            jobNames = printJobsWithIndex(config);
-            System.out.print("Job (number or name) (-job): ");
-            jobName = sc.nextLine();
+        // 4) choose jobs (multi-select)
+        if (isBlank(jobArg)) {
+            printJobsWithIndex(allJobs);
+            System.out.print("Jobs (numbers or names, separated by '\\') (-job): ");
+            jobArg = sc.nextLine();
         }
-        jobName = trimQuotes(jobName);
+        jobArg = trimQuotes(jobArg);
 
-        // 如果输入的是数字：映射到 job 名称
-        jobName = normalizeJobName(jobName, jobNames);
-
-        jobName = trimQuotes(jobName);
-        if (isBlank(jobName)) {
-            System.err.println("Job name is required.");
-            System.exit(2);
+        List<NamedJob> selectedJobs = resolveSelectedJobs(jobArg, allJobs);
+        if (selectedJobs == null || selectedJobs.isEmpty()) {
+            System.err.println("Job is required.");
+            System.err.println("Hint: input like 1\\3\\5 or apps:wms-Develop\\openapi:openapi-tssb_develop");
+            System.exit(EXIT_JOB_REQUIRED);
             return;
         }
 
-
-        PackagerConfig.JobConfig job = config.getJobs() != null ? config.getJobs().get(jobName) : null;
-        if (job == null) {
-            System.err.println("Job not found: " + jobName);
-            System.err.println("Hint: use --list-jobs to view available jobs.");
-            System.exit(3);
-            return;
-        }
-
-        // flags（没传就问）
+        // 5) flags
         if (skipTests == null) {
-            skipTests = askYesNo(sc, "Skip tests? (--skipTests) [Y/n]: ", false);
+            // 默认跳过测试（更适合打包工具）
+            skipTests = askYesNo(sc, "Skip tests? (--skipTests) [Y/n]: ", true);
         }
         if (dryRun == null) {
-            dryRun = askYesNo(sc, "Dry run? (--dry-run) [y/N]: ", false);
+            // 默认 dry-run，避免误操作
+            dryRun = askYesNo(sc, "Dry run? (--dry-run) [Y/n]: ", true);
         }
 
-        String mvnExe = config.getMaven() != null ? config.getMaven().getExecutable() : null;
-        Map<String, String> vars = config.getVars();
+        // 6) execute in input order
+        for (int i = 0; i < selectedJobs.size(); i++) {
+            NamedJob sel = selectedJobs.get(i);
 
-        ProcessExecutor pe = new ProcessExecutor();
-        pe.setDryRun(dryRun.booleanValue());
+            System.out.println("==================================================");
+            System.out.println("[" + (i + 1) + "/" + selectedJobs.size() + "] RUN: " + sel.getDisplayName());
+            System.out.println("==================================================");
 
-        JobRunner runner = new JobRunner(
-                new GitExecutor(pe),
-                new MavenExecutor(pe, mvnExe),
-                new ArtifactCopier(dryRun.booleanValue()),
-                vars,
-                dryRun.booleanValue()
-        );
+            PackagerConfig cfg = sel.getMergedConfig();
+            PackagerConfig.JobConfig job = sel.getJob();
 
-        runner.runJob(job, skipTests.booleanValue());
-        System.out.println("DONE: " + jobName + (dryRun ? " (DRY-RUN)" : ""));
+            String mvnExe = cfg.getMaven() != null ? cfg.getMaven().getExecutable() : null;
+            Map<String, String> vars = cfg.getVars();
+
+            ProcessExecutor pe = new ProcessExecutor();
+            pe.setDryRun(dryRun.booleanValue());
+
+            JobRunner runner = new JobRunner(
+                    new GitExecutor(pe),
+                    new MavenExecutor(pe, mvnExe),
+                    new ArtifactCopier(dryRun.booleanValue()),
+                    vars,
+                    dryRun.booleanValue()
+            );
+
+            runner.runJob(job, skipTests.booleanValue());
+            System.out.println("DONE: " + sel.getDisplayName() + (dryRun.booleanValue() ? " (DRY-RUN)" : ""));
+        }
+    }
+
+    private static void printJobsWithIndex(List<NamedJob> allJobs) {
+        System.out.println("Available jobs:");
+        for (int i = 0; i < allJobs.size(); i++) {
+            System.out.println((i + 1) + ") " + allJobs.get(i).getDisplayName());
+        }
+    }
+
+    /**
+     * Resolve user input to selected NamedJob list.
+     * Supported input formats:
+     * - numbers: "1\3\5"
+     * - names  : "apps:wms-Develop\openapi:openapi-tssb_develop"
+     * - mix    : "1\openapi:openapi-tssb_develop\3"
+     *
+     * Invalid items are ignored, but if all invalid -> return empty.
+     */
+    private static List<NamedJob> resolveSelectedJobs(String input, List<NamedJob> allJobs) {
+        if (isBlank(input)) return java.util.Collections.emptyList();
+
+        String[] parts = input.split("\\\\");
+        List<NamedJob> selected = new ArrayList<NamedJob>();
+
+        for (int i = 0; i < parts.length; i++) {
+            String raw = parts[i];
+            if (raw == null) continue;
+            String token = raw.trim();
+            if (token.isEmpty()) continue;
+
+            NamedJob found = null;
+
+            // number
+            if (token.matches("\\d+")) {
+                int idx = Integer.parseInt(token);
+                if (idx >= 1 && idx <= allJobs.size()) {
+                    found = allJobs.get(idx - 1);
+                }
+            } else {
+                // name match: displayName or jobName
+                found = findJobByName(token, allJobs);
+            }
+
+            if (found != null) {
+                selected.add(found);
+            }
+        }
+
+        return selected;
+    }
+
+    private static NamedJob findJobByName(String token, List<NamedJob> allJobs) {
+        if (token == null) return null;
+
+        // 1) exact match displayName
+        for (int i = 0; i < allJobs.size(); i++) {
+            NamedJob j = allJobs.get(i);
+            if (token.equals(j.getDisplayName())) return j;
+        }
+
+        // 2) exact match jobName (may be ambiguous if includes contain same jobName)
+        NamedJob candidate = null;
+        for (int i = 0; i < allJobs.size(); i++) {
+            NamedJob j = allJobs.get(i);
+            if (token.equals(j.getJobName())) {
+                if (candidate == null) {
+                    candidate = j;
+                } else {
+                    // ambiguous
+                    System.err.println("[WARN] job name is ambiguous, please use displayName with prefix: " + token);
+                    return null;
+                }
+            }
+        }
+        if (candidate != null) return candidate;
+
+        // 3) case-insensitive match displayName
+        String lower = token.toLowerCase();
+        for (int i = 0; i < allJobs.size(); i++) {
+            NamedJob j = allJobs.get(i);
+            if (j.getDisplayName() != null && j.getDisplayName().toLowerCase().equals(lower)) {
+                return j;
+            }
+        }
+
+        return null;
     }
 
     private static boolean askYesNo(Scanner sc, String prompt, boolean defaultValue) {
         System.out.print(prompt);
         String s = sc.nextLine();
         if (s == null) return defaultValue;
+
         s = s.trim().toLowerCase();
         if (s.isEmpty()) return defaultValue;
-        return "y".equals(s) || "yes".equals(s) || "true".equals(s) || "1".equals(s);
+
+        if ("y".equals(s) || "yes".equals(s) || "true".equals(s) || "1".equals(s)) return true;
+        if ("n".equals(s) || "no".equals(s) || "false".equals(s) || "0".equals(s)) return false;
+
+        return defaultValue;
     }
-
-
-    private static java.util.List<String> printJobsWithIndex(PackagerConfig config) {
-        if (config.getJobs() == null || config.getJobs().isEmpty()) {
-            System.out.println("No jobs found.");
-            return java.util.Collections.emptyList();
-        }
-
-        java.util.List<String> names = new java.util.ArrayList<String>(config.getJobs().keySet());
-
-        java.util.Collections.sort(names);
-
-        System.out.println("Available jobs:");
-        for (int i = 0; i < names.size(); i++) {
-            System.out.println((i + 1) + ") " + names.get(i));
-        }
-        return names;
-    }
-
 
     private static String argValue(String[] args, String key) {
         if (args == null) return null;
@@ -162,20 +264,4 @@ public class Main {
         }
         return s;
     }
-
-    private static String normalizeJobName(String input, java.util.List<String> jobNames) {
-        if (isBlank(input)) return input;
-
-        String s = input.trim();
-        // 只有在我们确实打印过列表时才支持数字选择
-        if (jobNames != null && !jobNames.isEmpty() && s.matches("\\d+")) {
-            int idx = Integer.parseInt(s);
-            if (idx >= 1 && idx <= jobNames.size()) {
-                return jobNames.get(idx - 1);
-            }
-            // 数字越界就原样返回，后面会走 job not found 的报错提示
-        }
-        return s;
-    }
-
 }

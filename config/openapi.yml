@@ -1,0 +1,142 @@
+jobs:
+  openapi-tssb_develop:
+    repos:
+      - name: "openapi-repo-bootstrap"
+        path: "${openapi_path}"
+        gitUrl: "${git_base}/openapi${repo_suffix}"
+        branch: "${branch_tssb_develop}"
+        shallow: "${shallow_default}"
+
+      - name: "openapi-cw-lmdm-common"
+        path: "${openapi_path}"
+        gitUrl: "${git_base}/openapi${repo_suffix}"
+        branch: "${branch_tssb_develop}"
+        shallow: "${shallow_default}"
+        maven:
+          workDir: "cw-lmdm-openapi.common.apps"
+          goals: ["clean", "install"]
+
+      - name: "openapi-cw-tms-common"
+        path: "${openapi_path}"
+        gitUrl: "${git_base}/openapi${repo_suffix}"
+        branch: "${branch_tssb_develop}"
+        shallow: "${shallow_default}"
+        maven:
+          workDir: "cw-tms-openapi.common.apps"
+          goals: ["clean", "install"]
+
+      - name: "openapi-cw-wms-common"
+        path: "${openapi_path}"
+        gitUrl: "${git_base}/openapi${repo_suffix}"
+        branch: "${branch_tssb_develop}"
+        shallow: "${shallow_default}"
+        maven:
+          workDir: "cw-wms-openapi.common.apps"
+          goals: ["clean", "install"]
+
+      - name: "openapi-cw-lmdm-api"
+        path: "${openapi_path}"
+        gitUrl: "${git_base}/openapi${repo_suffix}"
+        branch: "${branch_tssb_develop}"
+        shallow: "${shallow_default}"
+        maven:
+          workDir: "cw-lmdm-openapi.api.apps"
+          goals: ["clean", "package"]
+
+      - name: "openapi-cw-tms-api"
+        path: "${openapi_path}"
+        gitUrl: "${git_base}/openapi${repo_suffix}"
+        branch: "${branch_tssb_develop}"
+        shallow: "${shallow_default}"
+        maven:
+          workDir: "cw-tms-openapi.api.apps"
+          goals: ["clean", "package"]
+
+      - name: "openapi-cw-wms-api"
+        path: "${openapi_path}"
+        gitUrl: "${git_base}/openapi${repo_suffix}"
+        branch: "${branch_tssb_develop}"
+        shallow: "${shallow_default}"
+        maven:
+          workDir: "cw-wms-openapi.api.apps"
+          goals: ["clean", "package"]
+
+      - name: "openapi-ipp-mqlistener"
+        path: "${openapi_path}"
+        gitUrl: "${git_base}/openapi${repo_suffix}"
+        branch: "${branch_tssb_develop}"
+        shallow: "${shallow_default}"
+        maven:
+          workDir: "ipp.mqlistener.apps"
+          goals: ["clean", "package"]
+
+  openapi-TMS_Develop:
+    repos:
+      - name: "openapi-repo-bootstrap"
+        path: "${openapi_path}"
+        gitUrl: "${git_base}/openapi${repo_suffix}"
+        branch: "${branch_TMS_Develop}"
+        shallow: "${shallow_default}"
+
+      - name: "openapi-cw-lmdm-common"
+        path: "${openapi_path}"
+        gitUrl: "${git_base}/openapi${repo_suffix}"
+        branch: "${branch_TMS_Develop}"
+        shallow: "${shallow_default}"
+        maven:
+          workDir: "cw-lmdm-openapi.common.apps"
+          goals: ["clean", "install"]
+
+      - name: "openapi-cw-tms-common"
+        path: "${openapi_path}"
+        gitUrl: "${git_base}/openapi${repo_suffix}"
+        branch: "${branch_TMS_Develop}"
+        shallow: "${shallow_default}"
+        maven:
+          workDir: "cw-tms-openapi.common.apps"
+          goals: ["clean", "install"]
+
+      - name: "openapi-cw-wms-common"
+        path: "${openapi_path}"
+        gitUrl: "${git_base}/openapi${repo_suffix}"
+        branch: "${branch_TMS_Develop}"
+        shallow: "${shallow_default}"
+        maven:
+          workDir: "cw-wms-openapi.common.apps"
+          goals: ["clean", "install"]
+
+      - name: "openapi-cw-lmdm-api"
+        path: "${openapi_path}"
+        gitUrl: "${git_base}/openapi${repo_suffix}"
+        branch: "${branch_TMS_Develop}"
+        shallow: "${shallow_default}"
+        maven:
+          workDir: "cw-lmdm-openapi.api.apps"
+          goals: ["clean", "package"]
+
+      - name: "openapi-cw-tms-api"
+        path: "${openapi_path}"
+        gitUrl: "${git_base}/openapi${repo_suffix}"
+        branch: "${branch_TMS_Develop}"
+        shallow: "${shallow_default}"
+        maven:
+          workDir: "cw-tms-openapi.api.apps"
+          goals: ["clean", "package"]
+
+      - name: "openapi-cw-wms-api"
+        path: "${openapi_path}"
+        gitUrl: "${git_base}/openapi${repo_suffix}"
+        branch: "${branch_TMS_Develop}"
+        shallow: "${shallow_default}"
+        maven:
+          workDir: "cw-wms-openapi.api.apps"
+          goals: ["clean", "package"]
+
+      - name: "openapi-ipp-mqlistener"
+        path: "${openapi_path}"
+        gitUrl: "${git_base}/openapi${repo_suffix}"
+        branch: "${branch_TMS_Develop}"
+        shallow: "${shallow_default}"
+        maven:
+          workDir: "ipp.mqlistener.apps"
+          goals: ["clean", "package"]

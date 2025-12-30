@@ -1,25 +1,4 @@
-maven:
-  executable: "D:/apps/maven/apache-maven-3.9.9/bin/mvn.cmd"
-
-vars:
-  # 本地仓库根目录
-  base_path: "D:/document/Github/chainwork"
-
-  # git clone 根路径
-  git_base: "http://192.168.4.49/Project/FKS_WMSTMS_PIP"
-  repo_suffix: ".git"
-
-  # 默认浅克隆（想关就改成 "false"）
-  shallow_default: "true"
-
-  branch_tssb_develop: "tssb_develop"
-  branch_Develop: "Develop"
-
-  output_tssb_develop: "D:/document/Github/chainworkWar/tssb_develop"
-  output_Develop: "D:/document/Github/chainworkWar/Develop"
-
 jobs:
-
   # =====================================================
   # all-tssb_develop : tssb_develop 一键全量（WMS + TMS + LMDM）
   # =====================================================
