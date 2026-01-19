@@ -1,0 +1,169 @@
+  # =====================================================
+  # openapi-tssb_develop : openapi.git 分模块构建（tssb_develop）
+  # 规则：
+  # 1) 3 个 common 先 clean install
+  # 2) 3 个 api.apps 再 clean package
+  # 3) 所有 mq-apps clean package
+  # =====================================================
+  openapi-tssb_develop:
+    repos:
+      # --- 统一的 git 仓库（重复声明用于分模块跑 maven） ---
+      # 先确保 openapi 仓库存在并切分支
+      - name: "openapi-repo-bootstrap"
+        path: "${openapi_path}"
+        gitUrl: "${git_base}/openapi${repo_suffix}"
+        branch: "${branch_tssb_develop}"
+        shallow: "${shallow_default}"
+        # bootstrap 不跑 maven（避免多余构建）
+        # maven: null
+
+      # --- 3 个 common：clean install（必须在前） ---
+      - name: "openapi-cw-lmdm-common"
+        path: "${openapi_path}"
+        gitUrl: "${git_base}/openapi${repo_suffix}"
+        branch: "${branch_tssb_develop}"
+        shallow: "${shallow_default}"
+        maven:
+          workDir: "cw-lmdm-openapi.common.apps"
+          goals: ["clean", "install"]
+
+      - name: "openapi-cw-tms-common"
+        path: "${openapi_path}"
+        gitUrl: "${git_base}/openapi${repo_suffix}"
+        branch: "${branch_tssb_develop}"
+        shallow: "${shallow_default}"
+        maven:
+          workDir: "cw-tms-openapi.common.apps"
+          goals: ["clean", "install"]
+
+      - name: "openapi-cw-wms-common"
+        path: "${openapi_path}"
+        gitUrl: "${git_base}/openapi${repo_suffix}"
+        branch: "${branch_tssb_develop}"
+        shallow: "${shallow_default}"
+        maven:
+          workDir: "cw-wms-openapi.common.apps"
+          goals: ["clean", "install"]
+
+      # --- 3 个 api.apps：clean package（在 common 之后） ---
+      - name: "openapi-cw-lmdm-api"
+        path: "${openapi_path}"
+        gitUrl: "${git_base}/openapi${repo_suffix}"
+        branch: "${branch_tssb_develop}"
+        shallow: "${shallow_default}"
+        maven:
+          workDir: "cw-lmdm-openapi.api.apps"
+          goals: ["clean", "package"]
+
+      - name: "openapi-cw-tms-api"
+        path: "${openapi_path}"
+        gitUrl: "${git_base}/openapi${repo_suffix}"
+        branch: "${branch_tssb_develop}"
+        shallow: "${shallow_default}"
+        maven:
+          workDir: "cw-tms-openapi.api.apps"
+          goals: ["clean", "package"]
+
+      - name: "openapi-cw-wms-api"
+        path: "${openapi_path}"
+        gitUrl: "${git_base}/openapi${repo_suffix}"
+        branch: "${branch_tssb_develop}"
+        shallow: "${shallow_default}"
+        maven:
+          workDir: "cw-wms-openapi.api.apps"
+          goals: ["clean", "package"]
+
+      # --- mq-apps：clean package（把所有 mq 模块都列在这里） ---
+      - name: "openapi-ipp-mqlistener"
+        path: "${openapi_path}"
+        gitUrl: "${git_base}/openapi${repo_suffix}"
+        branch: "${branch_tssb_develop}"
+        shallow: "${shallow_default}"
+        maven:
+          workDir: "ipp.mqlistener.apps"
+          goals: ["clean", "package"]
+
+      # 如果还有其它 mq 模块：照抄一份，改 workDir 即可
+      # - name: "openapi-xxx-mq"
+      #   path: "${openapi_path}"
+      #   gitUrl: "${git_base}/openapi${repo_suffix}"
+      #   branch: "${branch_tssb_develop}"
+      #   shallow: "${shallow_default}"
+      #   maven:
+      #     workDir: "xxx.mq.apps"
+      #     goals: ["clean", "package"]
+
+
+  # =====================================================
+  # openapi-TMS_Develop : openapi.git 分模块构建（TMS_Develop）
+  # =====================================================
+  openapi-TMS_Develop:
+    repos:
+      - name: "openapi-repo-bootstrap"
+        path: "${openapi_path}"
+        gitUrl: "${git_base}/openapi${repo_suffix}"
+        branch: "${branch_TMS_Develop}"
+        shallow: "${shallow_default}"
+
+      - name: "openapi-cw-lmdm-common"
+        path: "${openapi_path}"
+        gitUrl: "${git_base}/openapi${repo_suffix}"
+        branch: "${branch_TMS_Develop}"
+        shallow: "${shallow_default}"
+        maven:
+          workDir: "cw-lmdm-openapi.common.apps"
+          goals: ["clean", "install"]
+
+      - name: "openapi-cw-tms-common"
+        path: "${openapi_path}"
+        gitUrl: "${git_base}/openapi${repo_suffix}"
+        branch: "${branch_TMS_Develop}"
+        shallow: "${shallow_default}"
+        maven:
+          workDir: "cw-tms-openapi.common.apps"
+          goals: ["clean", "install"]
+
+      - name: "openapi-cw-wms-common"
+        path: "${openapi_path}"
+        gitUrl: "${git_base}/openapi${repo_suffix}"
+        branch: "${branch_TMS_Develop}"
+        shallow: "${shallow_default}"
+        maven:
+          workDir: "cw-wms-openapi.common.apps"
+          goals: ["clean", "install"]
+
+      - name: "openapi-cw-lmdm-api"
+        path: "${openapi_path}"
+        gitUrl: "${git_base}/openapi${repo_suffix}"
+        branch: "${branch_TMS_Develop}"
+        shallow: "${shallow_default}"
+        maven:
+          workDir: "cw-lmdm-openapi.api.apps"
+          goals: ["clean", "package"]
+
+      - name: "openapi-cw-tms-api"
+        path: "${openapi_path}"
+        gitUrl: "${git_base}/openapi${repo_suffix}"
+        branch: "${branch_TMS_Develop}"
+        shallow: "${shallow_default}"
+        maven:
+          workDir: "cw-tms-openapi.api.apps"
+          goals: ["clean", "package"]
+
+      - name: "openapi-cw-wms-api"
+        path: "${openapi_path}"
+        gitUrl: "${git_base}/openapi${repo_suffix}"
+        branch: "${branch_TMS_Develop}"
+        shallow: "${shallow_default}"
+        maven:
+          workDir: "cw-wms-openapi.api.apps"
+          goals: ["clean", "package"]
+
+      - name: "openapi-ipp-mqlistener"
+        path: "${openapi_path}"
+        gitUrl: "${git_base}/openapi${repo_suffix}"
+        branch: "${branch_TMS_Develop}"
+        shallow: "${shallow_default}"
+        maven:
+          workDir: "ipp.mqlistener.apps"
+          goals: ["clean", "package"]
