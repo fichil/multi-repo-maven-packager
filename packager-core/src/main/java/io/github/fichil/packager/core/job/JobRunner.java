@@ -1,6 +1,7 @@
 package io.github.fichil.packager.core.job;
 
 import io.github.fichil.packager.core.artifact.ArtifactCopier;
+import io.github.fichil.packager.core.artifact.ArtifactFinder;
 import io.github.fichil.packager.core.config.PackagerConfig;
 import io.github.fichil.packager.core.config.VarResolver;
 import io.github.fichil.packager.core.git.GitExecutor;
@@ -18,14 +19,17 @@ public class JobRunner {
     private final ArtifactCopier copier;
     private final Map<String, String> vars;
     private final boolean dryRun; // 新增
+    private final ArtifactFinder artifactFinder;
 
     public JobRunner(GitExecutor git,
                      MavenExecutor mvn,
+                     ArtifactFinder artifactFinder,
                      ArtifactCopier copier,
                      Map<String, String> vars,
                      boolean dryRun) {
         this.git = git;
         this.mvn = mvn;
+        this.artifactFinder = artifactFinder;
         this.copier = copier;
         this.vars = vars;
         this.dryRun = dryRun;
@@ -128,9 +132,60 @@ public class JobRunner {
                 File from = new File(repoDir, fromStr);
                 File to = new File(outDir, toStr);
 
-                System.out.println("[PLAN] copy " + from.getAbsolutePath() + " -> " + to.getAbsolutePath());
-                copier.copy(from, to);
+                if (from.exists() && from.isFile()) {
+                    // 1) 按配置精确复制（保持现有行为）
+                    System.out.println("[PLAN] copy " + from.getAbsolutePath() + " -> " + to.getAbsolutePath());
+                    copier.copy(from, to);
+                } else {
+                    // 2) fallback：配置 from 不存在时，自动发现 war
+                    System.out.println("[WARN] Artifact not found by config: " + from.getAbsolutePath());
+                    System.out.println("[PLAN] fallback to auto-discover war under repo: " + repoDir.getAbsolutePath());
+
+                    List<File> wars = artifactFinder.findWars(repoDir);
+                    if (wars == null || wars.isEmpty()) {
+                        throw new IllegalArgumentException("No war found under repo: " + repoDir.getAbsolutePath()
+                                + " (repo=" + f.getRepo() + ", from=" + fromStr + ")");
+                    }
+
+                    // 如果 toStr 指定了文件名，则复制到这个文件名；否则复制所有 war 到 output 根
+                    boolean toLooksLikeFile = toStr != null && toStr.toLowerCase().endsWith(".war");
+
+                    if (toLooksLikeFile) {
+                        // 单文件输出：选一个最合适的 war
+                        File chosen = chooseBestWar(wars);
+                        System.out.println("[PLAN] copy(auto) " + chosen.getAbsolutePath() + " -> " + to.getAbsolutePath());
+                        copier.copy(chosen, to);
+                    } else {
+                        // 目录输出：全部 war 输出到目录（to 作为目录）
+                        File toDir = new File(outDir, toStr);
+                        for (int k = 0; k < wars.size(); k++) {
+                            File war = wars.get(k);
+                            File target = new File(toDir, war.getName());
+                            System.out.println("[PLAN] copy(auto) " + war.getAbsolutePath() + " -> " + target.getAbsolutePath());
+                            copier.copy(war, target);
+                        }
+                    }
+                }
+
             }
         }
     }
+
+    private static File chooseBestWar(List<File> wars) {
+        // 策略：优先选择最后修改时间最新的 war
+        File best = null;
+        long bestTime = -1L;
+
+        for (int i = 0; i < wars.size(); i++) {
+            File w = wars.get(i);
+            if (w == null) continue;
+            long t = w.lastModified();
+            if (best == null || t > bestTime) {
+                best = w;
+                bestTime = t;
+            }
+        }
+        return best;
+    }
+
 }

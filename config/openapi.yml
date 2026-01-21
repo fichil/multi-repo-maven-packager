@@ -1,12 +1,18 @@
+# config/openapi.yml
+# OpenAPI monorepo packaging config
+# Generated based on actual *.war locations under ${openapi_path}
+
 jobs:
   openapi-tssb_develop:
     repos:
+      # bootstrap: clone/checkout/pull
       - name: "openapi-repo-bootstrap"
         path: "${openapi_path}"
         gitUrl: "${git_base}/openapi${repo_suffix}"
         branch: "${branch_tssb_develop}"
         shallow: "${shallow_default}"
 
+      # commons (install)
       - name: "openapi-cw-lmdm-common"
         path: "${openapi_path}"
         gitUrl: "${git_base}/openapi${repo_suffix}"
@@ -34,6 +40,7 @@ jobs:
           workDir: "cw-wms-openapi.common.apps"
           goals: ["clean", "install"]
 
+      # api (package -> war)
       - name: "openapi-cw-lmdm-api"
         path: "${openapi_path}"
         gitUrl: "${git_base}/openapi${repo_suffix}"
@@ -61,23 +68,74 @@ jobs:
           workDir: "cw-wms-openapi.api.apps"
           goals: ["clean", "package"]
 
-      - name: "openapi-ipp-mqlistener"
+      # mqlistener (package -> war)
+      - name: "openapi-cw-lmdm-mq"
         path: "${openapi_path}"
         gitUrl: "${git_base}/openapi${repo_suffix}"
         branch: "${branch_tssb_develop}"
         shallow: "${shallow_default}"
         maven:
-          workDir: "ipp.mqlistener.apps"
+          workDir: "cw-lmdm-openapi.mqlistener.apps"
           goals: ["clean", "package"]
+
+      - name: "openapi-cw-tms-mq"
+        path: "${openapi_path}"
+        gitUrl: "${git_base}/openapi${repo_suffix}"
+        branch: "${branch_tssb_develop}"
+        shallow: "${shallow_default}"
+        maven:
+          workDir: "cw-tms-openapi.mqlistener.apps"
+          goals: ["clean", "package"]
+
+      - name: "openapi-cw-wms-mq"
+        path: "${openapi_path}"
+        gitUrl: "${git_base}/openapi${repo_suffix}"
+        branch: "${branch_tssb_develop}"
+        shallow: "${shallow_default}"
+        maven:
+          workDir: "cw-wms-openapi.mqlistener.apps"
+          goals: ["clean", "package"]
+
+    artifacts:
+      outputDir: "${output_tssb_develop}/openapi"
+      files:
+        # API wars
+        - repo: "openapi-repo-bootstrap"
+          from: "cw-lmdm-openapi.api.apps/cw-lmdm-openapi.api.web/target/cw-lmdm-openapi.api.web.war"
+          to: "api/cw-lmdm-openapi.api.web.war"
+
+        - repo: "openapi-repo-bootstrap"
+          from: "cw-tms-openapi.api.apps/cw-tms-openapi.api.web/target/cw-tms-openapi.api.web.war"
+          to: "api/cw-tms-openapi.api.web.war"
+
+        - repo: "openapi-repo-bootstrap"
+          from: "cw-wms-openapi.api.apps/cw-wms-openapi.api.web/target/cw-wms-openapi.api.web.war"
+          to: "api/cw-wms-openapi.api.web.war"
+
+        # MQ Listener wars
+        - repo: "openapi-repo-bootstrap"
+          from: "cw-lmdm-openapi.mqlistener.apps/cw-lmdm-openapi.mqlistener.web/target/cw-lmdm-openapi.mqlistener.web.war"
+          to: "mq/cw-lmdm-openapi.mqlistener.web.war"
+
+        - repo: "openapi-repo-bootstrap"
+          from: "cw-tms-openapi.mqlistener.apps/cw-tms-openapi.mqlistener.web/target/cw-tms-openapi.mqlistener.web.war"
+          to: "mq/cw-tms-openapi.mqlistener.web.war"
+
+        - repo: "openapi-repo-bootstrap"
+          from: "cw-wms-openapi.mqlistener.apps/cw-wms-openapi.mqlistener.web/target/cw-wms-openapi.mqlistener.web.war"
+          to: "mq/cw-wms-openapi.mqlistener.web.war"
+
 
   openapi-TMS_Develop:
     repos:
+      # bootstrap: clone/checkout/pull
       - name: "openapi-repo-bootstrap"
         path: "${openapi_path}"
         gitUrl: "${git_base}/openapi${repo_suffix}"
         branch: "${branch_TMS_Develop}"
         shallow: "${shallow_default}"
 
+      # commons (install)
       - name: "openapi-cw-lmdm-common"
         path: "${openapi_path}"
         gitUrl: "${git_base}/openapi${repo_suffix}"
@@ -105,6 +163,7 @@ jobs:
           workDir: "cw-wms-openapi.common.apps"
           goals: ["clean", "install"]
 
+      # api (package -> war)
       - name: "openapi-cw-lmdm-api"
         path: "${openapi_path}"
         gitUrl: "${git_base}/openapi${repo_suffix}"
@@ -132,11 +191,61 @@ jobs:
           workDir: "cw-wms-openapi.api.apps"
           goals: ["clean", "package"]
 
-      - name: "openapi-ipp-mqlistener"
+      # mqlistener (package -> war)
+      - name: "openapi-cw-lmdm-mq"
         path: "${openapi_path}"
         gitUrl: "${git_base}/openapi${repo_suffix}"
         branch: "${branch_TMS_Develop}"
         shallow: "${shallow_default}"
         maven:
-          workDir: "ipp.mqlistener.apps"
+          workDir: "cw-lmdm-openapi.mqlistener.apps"
           goals: ["clean", "package"]
+
+      - name: "openapi-cw-tms-mq"
+        path: "${openapi_path}"
+        gitUrl: "${git_base}/openapi${repo_suffix}"
+        branch: "${branch_TMS_Develop}"
+        shallow: "${shallow_default}"
+        maven:
+          workDir: "cw-tms-openapi.mqlistener.apps"
+          goals: ["clean", "package"]
+
+      - name: "openapi-cw-wms-mq"
+        path: "${openapi_path}"
+        gitUrl: "${git_base}/openapi${repo_suffix}"
+        branch: "${branch_TMS_Develop}"
+        shallow: "${shallow_default}"
+        maven:
+          workDir: "cw-wms-openapi.mqlistener.apps"
+          goals: ["clean", "package"
+
+          ]
+
+    artifacts:
+      outputDir: "${output_Develop}/openapi"
+      files:
+        # API wars
+        - repo: "openapi-repo-bootstrap"
+          from: "cw-lmdm-openapi.api.apps/cw-lmdm-openapi.api.web/target/cw-lmdm-openapi.api.web.war"
+          to: "api/cw-lmdm-openapi.api.web.war"
+
+        - repo: "openapi-repo-bootstrap"
+          from: "cw-tms-openapi.api.apps/cw-tms-openapi.api.web/target/cw-tms-openapi.api.web.war"
+          to: "api/cw-tms-openapi.api.web.war"
+
+        - repo: "openapi-repo-bootstrap"
+          from: "cw-wms-openapi.api.apps/cw-wms-openapi.api.web/target/cw-wms-openapi.api.web.war"
+          to: "api/cw-wms-openapi.api.web.war"
+
+        # MQ Listener wars
+        - repo: "openapi-repo-bootstrap"
+          from: "cw-lmdm-openapi.mqlistener.apps/cw-lmdm-openapi.mqlistener.web/target/cw-lmdm-openapi.mqlistener.web.war"
+          to: "mq/cw-lmdm-openapi.mqlistener.web.war"
+
+        - repo: "openapi-repo-bootstrap"
+          from: "cw-tms-openapi.mqlistener.apps/cw-tms-openapi.mqlistener.web/target/cw-tms-openapi.mqlistener.web.war"
+          to: "mq/cw-tms-openapi.mqlistener.web.war"
+
+        - repo: "openapi-repo-bootstrap"
+          from: "cw-wms-openapi.mqlistener.apps/cw-wms-openapi.mqlistener.web/target/cw-wms-openapi.mqlistener.web.war"
+          to: "mq/cw-wms-openapi.mqlistener.web.war"

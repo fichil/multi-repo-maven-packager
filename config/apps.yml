@@ -1,7 +1,5 @@
-<<<<<<<< HEAD:config/apps.yml
+
 jobs:
-========
->>>>>>>> origin/main:apps.yml
   # =====================================================
   # all-tssb_develop : tssb_develop 一键全量（WMS + TMS + LMDM）
   # =====================================================

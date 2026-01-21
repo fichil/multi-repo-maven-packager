@@ -8,6 +8,8 @@ import io.github.fichil.packager.core.exec.ProcessExecutor;
 import io.github.fichil.packager.core.git.GitExecutor;
 import io.github.fichil.packager.core.job.JobRunner;
 import io.github.fichil.packager.core.maven.MavenExecutor;
+import io.github.fichil.packager.core.artifact.ArtifactFinder;
+
 
 import java.io.File;
 import java.util.ArrayList;
@@ -123,6 +125,7 @@ public class Main {
             JobRunner runner = new JobRunner(
                     new GitExecutor(pe),
                     new MavenExecutor(pe, mvnExe),
+                    new ArtifactFinder(),
                     new ArtifactCopier(dryRun.booleanValue()),
                     vars,
                     dryRun.booleanValue()
